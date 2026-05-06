@@ -62,8 +62,10 @@ class User(Document, UserMixin):
     leetcode_username = StringField()
     github_username = StringField()
     gfg_username = StringField()
+    hackerrank_username = StringField(default='')
     external_daily_counts = MapField(IntField())
     external_totals = MapField(IntField())
+    last_sync = DateTimeField()
     # Profile fields
     bio = StringField(default='')
     location = StringField(default='')
@@ -478,9 +480,22 @@ def update_question(question_id):
 @login_required
 def sync_platforms():
     data = request.json
-    current_user.leetcode_username = data.get('leetcode', '').strip()
-    current_user.github_username = data.get('github', '').strip()
-    current_user.gfg_username = data.get('gfg', '').strip()
+    now = datetime.utcnow()
+    
+    if getattr(current_user, 'last_sync', None):
+        diff = (now - current_user.last_sync).total_seconds()
+        if diff < 600:
+            rem = int(600 - diff)
+            mins = rem // 60
+            secs = rem % 60
+            return jsonify({"success": False, "error": f"Please wait {mins}m {secs}s before syncing again."})
+            
+    current_user.last_sync = now
+    
+    if 'leetcode' in data: current_user.leetcode_username = data.get('leetcode', '').strip()
+    if 'github' in data: current_user.github_username = data.get('github', '').strip()
+    if 'gfg' in data: current_user.gfg_username = data.get('gfg', '').strip()
+    if 'hackerrank' in data: current_user.hackerrank_username = data.get('hackerrank', '').strip()
     combined = {}
     totals = {}
     if current_user.leetcode_username:
@@ -513,9 +528,9 @@ def sync_platforms():
         gfg = fetch_gfg(current_user.gfg_username)
         if gfg.get('total'): totals['GFG'] = int(gfg.get('total', 0))
     # HackerRank badges stored in dedicated field
-    if current_user.gfg_username:
+    if current_user.hackerrank_username:
         try:
-            hr_badges = fetch_hr_badges(current_user.gfg_username)
+            hr_badges = fetch_hr_badges(current_user.hackerrank_username)
             current_user.hr_badges_json = json.dumps(hr_badges)
         except: pass
     current_user.external_daily_counts = combined

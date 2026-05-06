@@ -294,7 +294,12 @@
 <!-- ── RIGHT PANEL ── -->
 <div class="prof-right">
   <div class="card">
-    <div class="section-title">Problems Solved</div>
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>Problems Solved</span>
+      <button onclick="handleQuickSync(this)" title="Sync Connected Platforms" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;transition:color 0.2s;display:flex;align-items:center" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-muted)'">
+        <i class="bi bi-arrow-clockwise" id="quickSyncIcon"></i>
+      </button>
+    </div>
 
     <!-- Fundamentals -->
     <div class="donut-wrap">
@@ -374,6 +379,8 @@
     <input class="m-inp" id="gh_username" placeholder="e.g. torvalds" value="{{ user.github_username or '' }}">
     <label class="m-lbl"><i class="bi bi-braces" style="color:var(--success);margin-right:4px"></i>GeeksForGeeks Username</label>
     <input class="m-inp" id="gfg_username" placeholder="e.g. geek" value="{{ user.gfg_username or '' }}">
+    <label class="m-lbl"><i class="bi bi-h-square" style="color:#00bd6c;margin-right:4px"></i>HackerRank Username</label>
+    <input class="m-inp" id="hr_username" placeholder="e.g. hacker" value="{{ user.hackerrank_username or '' }}">
     <div class="m-note">⚠️ GFG sync is experimental and may take a few seconds.</div>
     <div class="m-actions">
       <button class="m-cancel" onclick="closeSyncModal()">Cancel</button>
@@ -506,12 +513,55 @@ window.handleSaveProfile = function(btn){
     });
 };
 
+window.handleQuickSync = function(btn) {
+  const icon = document.getElementById('quickSyncIcon');
+  if (btn.disabled) return;
+  
+  const lc = '{{ user.leetcode_username or "" }}';
+  const gh = '{{ user.github_username or "" }}';
+  const gfg = '{{ user.gfg_username or "" }}';
+  const hr = '{{ user.hackerrank_username or "" }}';
+  
+  if(!lc && !gh && !gfg && !hr){
+    showToast('⚠️ No platforms connected to sync!');
+    return;
+  }
+
+  btn.disabled = true;
+  icon.classList.add('btn-spinner');
+  icon.className = 'bi bi-arrow-clockwise btn-spinner';
+  showToast('⏳ Syncing profiles...');
+  
+  fetch('/sync_platforms', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({leetcode:lc,github:gh,gfg:gfg,hackerrank:hr})
+  })
+  .then(r => r.json())
+  .then(res => {
+    btn.disabled = false;
+    icon.className = 'bi bi-arrow-clockwise';
+    if(res.success){
+      showToast('✅ Synced successfully! Reloading...');
+      setTimeout(()=>window.location.reload(), 1200);
+    } else {
+      showToast('❌ Sync failed: ' + (res.error || 'unknown'));
+    }
+  })
+  .catch(err => {
+    btn.disabled = false;
+    icon.className = 'bi bi-arrow-clockwise';
+    showToast('❌ Network error. Check connection.');
+  });
+};
+
 window.handleSyncProfile = function(btn){
   const syncContent=document.getElementById('syncBtnContent');
   const lc=document.getElementById('lc_username').value.trim();
   const gh=document.getElementById('gh_username').value.trim();
   const gfg=document.getElementById('gfg_username').value.trim();
-  if(!lc && !gh && !gfg){showToast('\u26a0\ufe0f Enter at least one username');return;}
+  const hr=document.getElementById('hr_username').value.trim();
+  if(!lc && !gh && !gfg && !hr){showToast('\u26a0\ufe0f Enter at least one username');return;}
 
   // Disable button & show spinner
   btn.disabled=true;
@@ -542,7 +592,7 @@ window.handleSyncProfile = function(btn){
   fetch('/sync_platforms',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({leetcode:lc,github:gh,gfg:gfg}),
+    body:JSON.stringify({leetcode:lc,github:gh,gfg:gfg,hackerrank:hr}),
     signal:ctrl.signal
   })
   .then(r=>{clearTimeout(timer);return r.json();})
