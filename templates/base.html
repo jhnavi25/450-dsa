@@ -232,6 +232,11 @@
             color: white;
         }
 
+        .streak-pill {
+            border-color: rgba(245, 158, 11, 0.45);
+            color: var(--warning);
+        }
+
         .icon-btn {
             width: 36px;
             height: 36px;
@@ -601,6 +606,12 @@
                 <i class="bi bi-briefcase-fill"></i>
                 <span>Company Wise Kit</span>
             </a>
+            {% if current_user.is_authenticated and current_streak >= 3 %}
+            <a href="{{ url_for('profile') }}" class="pill-btn streak-pill" title="{{ current_streak }} day streak">
+                <i class="bi bi-fire"></i>
+                <span>{{ current_streak }}d</span>
+            </a>
+            {% endif %}
             <button class="icon-btn" id="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
                 <i class="bi bi-moon-fill" id="theme-icon" aria-hidden="true"></i>
             </button>

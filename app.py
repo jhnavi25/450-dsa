@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from profile_validation import build_profile_updates
 from notes_export import build_topic_notes_markdown, topic_notes_filename
 from progress_export import build_progress_csv
+from streaks import compute_streak
 
 load_dotenv()
 
@@ -103,6 +104,15 @@ def ensure_utc_datetime(value):
     if value and value.tzinfo is None:
         return value.replace(tzinfo=timezone.utc)
     return value
+
+
+@app.context_processor
+def inject_streak_summary():
+    if current_user.is_authenticated:
+        current_streak, _ = compute_streak(current_user.progress)
+        return {'current_streak': current_streak}
+    return {'current_streak': 0}
+
 
 def fetch_leetcode(username):
     try:
@@ -1025,6 +1035,7 @@ def profile():
             daily_counts[d_str] = daily_counts.get(d_str, 0) + count
 
     total_active_days = len(daily_counts)
+    current_streak, longest_streak = compute_streak(user.progress)
     sorted_dates = sorted(daily_counts.keys())
     cumulative_data = []
     cum_sum = 0
@@ -1110,6 +1121,8 @@ def profile():
                            daily_counts=daily_counts,
                            cumulative_data=cumulative_data,
                            total_active_days=total_active_days,
+                           current_streak=current_streak,
+                           longest_streak=longest_streak,
                            rating_history=rating_history,
                            lc_badges=lc_badges,
                            hr_badges=hr_badges)
