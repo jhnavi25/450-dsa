@@ -11,7 +11,7 @@ from flask import Flask, session
 from app.admin import admin_bp
 from app.auth import auth_bp
 from app.faq import faq_bp
-from app.extensions import bcrypt, db, limiter, login_manager, mongo, oauth, cache
+from app.extensions import bcrypt, cache, csrf, db, limiter, login_manager, mongo, oauth
 from app.leaderboard import leaderboard_bp
 from app.web.routes import public_bp
 from app.profile import profile_bp
@@ -41,6 +41,7 @@ def create_app(config_class=None):
     )
     
     cache.init_app(app)
+    csrf.init_app(app)
     Swagger(
         app,
         template={

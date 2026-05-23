@@ -596,7 +596,7 @@ window.handleSaveProfile = function(btn){
   };
   btn.disabled=true;
   contentEl.innerHTML='<span class="btn-spinner"></span> Saving...';
-  fetch('/edit_profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+  fetch('/edit_profile',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token() }}'},body:JSON.stringify(payload)})
     .then(r=>r.json())
     .then(res=>{
       if(res.success){
@@ -637,7 +637,7 @@ window.handleQuickSync = function(btn) {
   
   fetch('/sync_platforms', {
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    headers:{'Content-Type':'application/json', 'X-CSRFToken':'{{ csrf_token() }}'},
     body:JSON.stringify({leetcode:lc,github:gh,gfg:gfg,hackerrank:hr,codingninjas:cn})
   })
   .then(r => r.json())
@@ -809,7 +809,7 @@ function handlePhotoUpload(e){
   const fd=new FormData();
   fd.append('photo',file);
   showToast('⏳ Uploading photo...');
-  fetch('/upload_photo',{method:'POST',body:fd})
+  fetch('/upload_photo',{method:'POST',headers:{'X-CSRFToken':'{{ csrf_token() }}'},body:fd})
     .then(r=>r.json())
     .then(res=>{
       if(res.success){
