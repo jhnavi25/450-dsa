@@ -197,7 +197,10 @@
           <div style="color:var(--warning)">Top {{ '%.1f'|format(lc_rank / 500000 * 100) if lc_rank > 0 else 0 }}%</div>
         </div>
       </div>
-      <div style="height:130px;margin-top:4px"><canvas id="progressChart" aria-label="Rating progress chart"></canvas></div>
+      <div class="chart-shell" id="progressChartShell" style="height:130px;margin-top:4px">
+        <div class="chart-skeleton" aria-hidden="true"></div>
+        <canvas id="progressChart" aria-label="Rating progress chart"></canvas>
+      </div>
     </div>
   </div>
 
@@ -284,7 +287,8 @@
     </div>
 
     <!-- Fundamentals -->
-    <div class="donut-wrap">
+    <div class="donut-wrap chart-shell" id="platformsChartShell">
+      <div class="chart-skeleton" aria-hidden="true"></div>
       <canvas id="platformsChart" aria-label="Platforms solved distribution chart"></canvas>
       <div class="donut-inner">{{ global_total_solved }}</div>
     </div>
@@ -319,7 +323,8 @@
 
     <!-- DSA difficulty -->
     <div style="font-size:.8rem;font-weight:700;text-align:center;color:var(--text-secondary);margin-bottom:12px">DSA</div>
-    <div class="donut-wrap">
+    <div class="donut-wrap chart-shell" id="difficultyChartShell">
+      <div class="chart-skeleton" aria-hidden="true"></div>
       <canvas id="difficultyChart" aria-label="Difficulty distribution chart"></canvas>
       <div class="donut-inner">{{ lc_easy + lc_medium + lc_hard }}</div>
     </div>
@@ -624,6 +629,10 @@ window.handleSyncProfile = function(btn){
 // ── Chart & Visualization Code ──
 const dailyCounts = {{ daily_counts | tojson }};
 const heatmap = document.getElementById('heatmap');
+function markChartReady(id){
+  const shell = document.getElementById(id);
+  if (shell) shell.classList.add('is-ready');
+}
 const today = new Date();
 const days = 168;
 let start = new Date(); start.setDate(today.getDate() - days + 1);
@@ -647,6 +656,7 @@ if(chartData.length > 0 && chartCanvas && typeof Chart !== 'undefined'){
     data:{labels:chartData.map(d=>d.x),datasets:[{data:chartData.map(d=>d.y),borderColor:'#f68b24',backgroundColor:'rgba(246,139,36,.15)',borderWidth:2,fill:true,tension:.4,pointRadius:ratingHistory.length>0?3:0,pointHoverRadius:5,pointBackgroundColor:'#f68b24'}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:items=>items[0].label,label:ctx=>ratingHistory.length>0?'Rating: '+ctx.raw:'Solved: '+ctx.raw}}},scales:{x:{grid:{display:false},ticks:{color:'#888',maxTicksLimit:5,font:{size:10}}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#888',font:{size:10}}}}}
   });
+  markChartReady('progressChartShell');
 } else if(chartCanvas && typeof Chart !== 'undefined') {
   // Show empty state inside canvas area
   const ctx = chartCanvas.getContext('2d');
@@ -656,6 +666,7 @@ if(chartData.length > 0 && chartCanvas && typeof Chart !== 'undefined'){
   ctx.font = '13px Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('Sync LeetCode to see rating chart', chartCanvas.width/2, chartCanvas.height/2 - 8);
+  markChartReady('progressChartShell');
 }
 
 const pData = {{ platforms | tojson }};
@@ -663,13 +674,13 @@ try{new Chart(document.getElementById('platformsChart'),{
   type:'doughnut',
   data:{labels:['LeetCode','GFG','Coding Ninjas','HackerRank','Other'],datasets:[{data:[pData['LeetCode'],pData['GFG'],pData['Coding Ninjas'],pData['HackerRank'],pData['Other']],backgroundColor:['#ffb800','#22c55e','#8b5cf6','#00bd6c','#6c757d'],borderWidth:0,cutout:'78%'}]},
   options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
-});}catch(e){console.warn('Chart.js load failed:',e);}
+}); markChartReady('platformsChartShell');}catch(e){console.warn('Chart.js load failed:',e); markChartReady('platformsChartShell');}
 
 try{new Chart(document.getElementById('difficultyChart'),{
   type:'doughnut',
   data:{labels:['Easy','Medium','Hard'],datasets:[{data:[{{lc_easy}},{{lc_medium}},{{lc_hard}}],backgroundColor:['#00b8a3','#ffc01e','#ff375f'],borderWidth:0,cutout:'78%'}]},
   options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
-});}catch(e){console.warn('Difficulty chart error:',e);}
+}); markChartReady('difficultyChartShell');}catch(e){console.warn('Difficulty chart error:',e); markChartReady('difficultyChartShell');}
 
 function openSyncModal(){document.getElementById('syncModal').classList.add('open')}
 function closeSyncModal(){document.getElementById('syncModal').classList.remove('open')}

@@ -1,7 +1,9 @@
 .prof-layout{display:grid;grid-template-columns:240px 1fr 260px;gap:16px;align-items:start}
 .prof-sidebar,.prof-main,.prof-right{display:flex;flex-direction:column;gap:14px}
 .card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:14px;padding:18px;color:var(--text-primary)}
-.avatar-ring{width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#ff375f);display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;color:#fff;margin:0 auto 12px;border:3px solid var(--border-color)}
+.avatar-ring{width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#ff375f);display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;color:#fff;margin:0 auto 12px;border:3px solid var(--border-color);position:relative;overflow:hidden}
+.avatar-ring::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);animation:skeleton-shimmer 1.15s linear infinite}
+.avatar-ring img{position:relative;z-index:1}
 .prof-name{font-size:1.1rem;font-weight:800;text-align:center;margin-bottom:2px}
 .prof-handle{text-align:center;font-size:0.8rem;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:4px}
 .card-btn{display:block;width:100%;padding:9px;background:var(--accent);border:none;border-radius:9px;color:#fff;font-weight:700;font-size:0.82rem;font-family:inherit;cursor:pointer;text-align:center;text-decoration:none;margin-bottom:12px}
@@ -36,6 +38,11 @@
 .hm-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:0.72rem;color:var(--text-secondary)}
 .contest-grid{display:grid;grid-template-columns:1fr 2fr;gap:12px;min-height:160px}
 .empty-chart{display:flex;flex-direction:column;align-items:center;justify-content:center;height:110px;color:var(--text-muted);font-size:.8rem;gap:6px}
+.chart-shell{position:relative;min-height:130px}
+.chart-shell .chart-skeleton{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:12px;background:rgba(255,255,255,.04);overflow:hidden}
+.chart-shell .chart-skeleton::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);animation:skeleton-shimmer 1.15s linear infinite}
+.chart-shell canvas{position:relative;z-index:1}
+.chart-shell.is-ready .chart-skeleton{display:none}
 .awards-grid{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
 .award-badge{width:64px;height:74px;background:linear-gradient(135deg,rgba(255,107,0,.15),rgba(255,55,95,.1));border:1px solid var(--border-color);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:1.6rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;padding:4px}
 .award-badge:hover{border-color:var(--accent);transform:translateY(-2px)}
@@ -72,6 +79,7 @@
 .m-save:hover:not(:disabled){background:var(--accent-hover)}
 .m-save:disabled{opacity:0.7;cursor:not-allowed}
 .m-note{font-size:0.72rem;color:var(--text-muted);margin-top:-8px;margin-bottom:10px}
+@keyframes skeleton-shimmer{to{transform:translateX(100%)}}
 @keyframes btn-spin{to{transform:rotate(360deg)}}
 .btn-spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:btn-spin .7s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
