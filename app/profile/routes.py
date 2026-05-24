@@ -24,6 +24,9 @@ profile_bp = Blueprint("profile", __name__)
 
 __all__ = ["CACHE_TTL", "card_cache", "get_public_card_image"]
 
+SYNC_COOLDOWN_SECONDS = 600
+UNIVERSITY_SEARCH_TIMEOUT_SECONDS = 5
+
 
 def build_sync_platforms_response(platform_status: dict):
     attempted = sum(1 for value in platform_status.values() if value.get("status") != "skipped")
@@ -114,8 +117,8 @@ def sync_platforms():
     if last_sync:
         last_sync = ensure_utc_datetime(last_sync)
         diff = (now - last_sync).total_seconds()
-        if diff < 600:
-            remaining = int(600 - diff)
+        if diff < SYNC_COOLDOWN_SECONDS:
+            remaining = int(SYNC_COOLDOWN_SECONDS - diff)
             mins = remaining // 60
             secs = remaining % 60
             return json_error(f"Please wait {mins}m {secs}s before syncing again.", status_code=200)
@@ -353,7 +356,6 @@ def edit_profile():
         current_user.reload()
     return json_success()
 
-
 @profile_bp.route("/u/<user_id>/card.png")
 def public_card(user_id):
     from bson.objectid import ObjectId
@@ -413,7 +415,7 @@ def search_universities():
         response = requests.get(
             "https://universities.hipolabs.com/search",
             params={"name": query},
-            timeout=5,
+            timeout=UNIVERSITY_SEARCH_TIMEOUT_SECONDS,
         )
         if response.status_code == 200:
             data = response.json()
