@@ -2,6 +2,7 @@ from flask import Flask
 from types import SimpleNamespace
 
 import app.profile.routes as profile_routes
+import app.profile.sync_service as profile_sync_service
 from app.profile.routes import profile_bp
 
 
@@ -112,7 +113,7 @@ def test_sync_platforms_runs_selected_platform_jobs_concurrently(monkeypatch):
             {},
         )
 
-    monkeypatch.setattr(profile_routes, "run_fetch_jobs", fake_run_fetch_jobs)
+    monkeypatch.setattr(profile_sync_service, "run_fetch_jobs", fake_run_fetch_jobs)
 
     response = app.test_client().post(
         "/sync_platforms",
@@ -176,7 +177,7 @@ def test_sync_platforms_tolerates_missing_cache_extension(monkeypatch):
     )
 
     monkeypatch.setattr(
-        profile_routes,
+        profile_sync_service,
         "run_fetch_jobs",
         lambda fetch_jobs, max_workers=5: (
             {
@@ -230,7 +231,7 @@ def test_sync_platforms_marks_github_rate_limit_payload_failed(monkeypatch):
         lambda key: captured.setdefault("cleared_cache_key", key),
     )
     monkeypatch.setattr(
-        profile_routes,
+        profile_sync_service,
         "run_fetch_jobs",
         lambda fetch_jobs, max_workers=5: (
             {"github": {"error": "rate_limited", "calendar": {"2026-05-25": 3}, "stats": None}},
