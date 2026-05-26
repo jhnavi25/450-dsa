@@ -661,35 +661,10 @@ for(let i=0;i<days;i++){
 const ratingHistory = {{ rating_history | tojson }};
 const cumData = {{ cumulative_data | tojson }};
 const pData = {{ platforms | tojson }};
-const chartShells=['progressChartShell','platformsChartShell','difficultyChartShell'].map(id=>document.getElementById(id)).filter(Boolean);
-let chartJsPromise;
-function loadChartJs(){
-  if(window.Chart)return Promise.resolve(window.Chart);
-  if(chartJsPromise)return chartJsPromise;
-  return chartJsPromise=new Promise((resolve,reject)=>{
-    const add=(src,err)=>{const s=document.createElement('script');s.src=src;s.async=true;s.onload=()=>resolve(window.Chart);s.onerror=err||reject;document.head.appendChild(s);return s;};
-    add('https://cdn.jsdelivr.net/npm/chart.js',()=>add('https://unpkg.com/chart.js@4/dist/chart.umd.js'));
-  });
-}
-function doughnut(id,shell,labels,data,colors){
-  try{new Chart(document.getElementById(id),{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0,cutout:'78%'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});}
-  catch(e){console.warn(id+' chart error:',e);}
-  markChartReady(shell);
-}
-function renderProfileCharts(){
-  loadChartJs().then(()=>{
-    const chartCanvas=document.getElementById('progressChart'), chartData=ratingHistory.length?ratingHistory:cumData;
-    if(chartData.length&&chartCanvas){
-      new Chart(chartCanvas,{type:'line',data:{labels:chartData.map(d=>d.x),datasets:[{data:chartData.map(d=>d.y),borderColor:'#f68b24',backgroundColor:'rgba(246,139,36,.15)',borderWidth:2,fill:true,tension:.4,pointRadius:ratingHistory.length?3:0,pointHoverRadius:5,pointBackgroundColor:'#f68b24'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:items=>items[0].label,label:ctx=>ratingHistory.length?'Rating: '+ctx.raw:'Solved: '+ctx.raw}}},scales:{x:{grid:{display:false},ticks:{color:'#888',maxTicksLimit:5,font:{size:10}}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#888',font:{size:10}}}}}});
-    }else if(chartCanvas){
-      const ctx=chartCanvas.getContext('2d');ctx.fillStyle='rgba(255,255,255,0.08)';ctx.fillRect(0,0,chartCanvas.width,chartCanvas.height);ctx.fillStyle='#555';ctx.font='13px Inter, sans-serif';ctx.textAlign='center';ctx.fillText('Sync LeetCode to see rating chart',chartCanvas.width/2,chartCanvas.height/2-8);
-    }
-    markChartReady('progressChartShell');
-    doughnut('platformsChart','platformsChartShell',['LeetCode','GFG','Coding Ninjas','HackerRank','Other'],[pData['LeetCode'],pData['GFG'],pData['Coding Ninjas'],pData['HackerRank'],pData['Other']],['#ffb800','#22c55e','#8b5cf6','#00bd6c','#6c757d']);
-    doughnut('difficultyChart','difficultyChartShell',['Easy','Medium','Hard'],[{{lc_easy}},{{lc_medium}},{{lc_hard}}],['#00b8a3','#ffc01e','#ff375f']);
-  }).catch(()=>chartShells.forEach(shell=>shell.classList.add('is-ready')));
-}
-if('IntersectionObserver'in window&&chartShells.length){const chartObserver=new IntersectionObserver((entries,observer)=>{if(entries.some(entry=>entry.isIntersecting)){observer.disconnect();renderProfileCharts();}},{rootMargin:'160px'});chartShells.forEach(shell=>chartObserver.observe(shell));}else renderProfileCharts();
+const chartShells=['progressChartShell','platformsChartShell','difficultyChartShell'].map(i=>document.getElementById(i)).filter(Boolean);let chartJsPromise;
+function loadChartJs(){return window.Chart?Promise.resolve(window.Chart):chartJsPromise||(chartJsPromise=new Promise((ok,bad)=>{let add=(src,err)=>{let s=document.createElement('script');s.src=src;s.async=true;s.onload=()=>ok(window.Chart);s.onerror=err||bad;document.head.appendChild(s)};add('https://cdn.jsdelivr.net/npm/chart.js',()=>add('https://unpkg.com/chart.js@4/dist/chart.umd.js'))}))}
+function renderProfileCharts(){loadChartJs().then(()=>{let c=document.getElementById('progressChart'),d=ratingHistory.length?ratingHistory:cumData;if(d.length&&c)new Chart(c,{type:'line',data:{labels:d.map(x=>x.x),datasets:[{data:d.map(x=>x.y),borderColor:'#f68b24',backgroundColor:'rgba(246,139,36,.15)',borderWidth:2,fill:true,tension:.4,pointRadius:ratingHistory.length?3:0,pointHoverRadius:5,pointBackgroundColor:'#f68b24'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#888',maxTicksLimit:5,font:{size:10}}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#888',font:{size:10}}}}}});else if(c){let x=c.getContext('2d');x.fillStyle='#555';x.font='13px Inter, sans-serif';x.textAlign='center';x.fillText('Sync LeetCode to see rating chart',c.width/2,c.height/2-8)}markChartReady('progressChartShell');[['platformsChart','platformsChartShell',['LeetCode','GFG','Coding Ninjas','HackerRank','Other'],[pData.LeetCode,pData.GFG,pData['Coding Ninjas'],pData.HackerRank,pData.Other],['#ffb800','#22c55e','#8b5cf6','#00bd6c','#6c757d']],['difficultyChart','difficultyChartShell',['Easy','Medium','Hard'],[{{lc_easy}},{{lc_medium}},{{lc_hard}}],['#00b8a3','#ffc01e','#ff375f']]].forEach(a=>{try{new Chart(document.getElementById(a[0]),{type:'doughnut',data:{labels:a[2],datasets:[{data:a[3],backgroundColor:a[4],borderWidth:0,cutout:'78%'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}})}catch(e){}markChartReady(a[1])})}).catch(()=>chartShells.forEach(s=>s.classList.add('is-ready')))}
+if('IntersectionObserver'in window&&chartShells.length){const io=new IntersectionObserver((e,o)=>{if(e.some(x=>x.isIntersecting)){o.disconnect();renderProfileCharts()}},{rootMargin:'160px'});chartShells.forEach(s=>io.observe(s))}else renderProfileCharts();
 
 function openSyncModal(){document.getElementById('syncModal').classList.add('open')}
 function closeSyncModal(){document.getElementById('syncModal').classList.remove('open')}
