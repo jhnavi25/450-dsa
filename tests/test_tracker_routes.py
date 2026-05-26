@@ -192,6 +192,43 @@ def test_update_question_rejects_non_boolean_skipped(monkeypatch):
     assert response.get_json() == {"success": False, "error": "skipped must be a boolean"}
 
 
+def test_topic_page_accepts_lowercase_difficulty_filter(monkeypatch):
+    flask_app, test_db = build_test_app(monkeypatch, extra_db_targets=(tracker_routes,))
+    topic_id = test_db.topic.insert_one({"name": "Arrays", "position": 1}).inserted_id
+    test_db.question.insert_many([
+        {"topic": topic_id, "problem": "Easy Prob", "difficulty": "Easy"},
+        {"topic": topic_id, "problem": "Hard Prob", "difficulty": "Hard"},
+    ])
+
+    with flask_app.test_client() as client:
+        response = client.get(f"/topic/{topic_id}?difficulty=easy")
+
+    assert response.status_code == 200
+    html = response.data.decode("utf-8")
+    assert "Showing 1 of 2 questions (Easy difficulty)" in html
+    assert "Easy Prob" in html
+    assert "Hard Prob" not in html
+
+
+def test_topic_page_ignores_unknown_difficulty_filter(monkeypatch):
+    flask_app, test_db = build_test_app(monkeypatch, extra_db_targets=(tracker_routes,))
+    topic_id = test_db.topic.insert_one({"name": "Arrays", "position": 1}).inserted_id
+    test_db.question.insert_many([
+        {"topic": topic_id, "problem": "Easy Prob", "difficulty": "Easy"},
+        {"topic": topic_id, "problem": "Hard Prob", "difficulty": "Hard"},
+    ])
+
+    with flask_app.test_client() as client:
+        response = client.get(f"/topic/{topic_id}?difficulty=Invalid")
+
+    assert response.status_code == 200
+    html = response.data.decode("utf-8")
+    assert "2 questions in this topic" in html
+    assert "Showing 0 of 2 questions" not in html
+    assert "Easy Prob" in html
+    assert "Hard Prob" in html
+
+
 def test_update_question_accepts_valid_boolean_update(monkeypatch):
     flask_app, test_db = build_test_app(monkeypatch, extra_db_targets=(tracker_routes,))
     question_id = test_db.question.insert_one({"problem": "Two Sum"}).inserted_id

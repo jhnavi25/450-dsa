@@ -11,6 +11,18 @@ from progress_export import build_progress_csv
 
 tracker_bp = Blueprint("tracker", __name__)
 
+DIFFICULTY_FILTERS = {
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+}
+
+
+def normalize_difficulty_filter(raw_filter):
+    value = (raw_filter or "all").strip().lower()
+    if value == "all":
+        return "all"
+    return DIFFICULTY_FILTERS.get(value, "all")
 INDEX_QUESTION_PROJECTION = {"topic": 1}
 TOPIC_PAGE_QUESTION_PROJECTION = {
     "problem": 1,
@@ -34,7 +46,6 @@ CSV_EXPORT_QUESTION_PROJECTION = {
     "url2": 1,
 }
 ALL_NOTES_QUESTION_PROJECTION = {"problem": 1, "topic": 1}
-
 
 @tracker_bp.route("/")
 def index():
@@ -95,7 +106,7 @@ def topic(topic_id):
     todo_count = total_count - done_count - skipped_count
     
     # Get difficulty filter from query parameter
-    difficulty_filter = request.args.get('difficulty', 'all')
+    difficulty_filter = normalize_difficulty_filter(request.args.get('difficulty', 'all'))
     status_filter = request.args.get('status', 'all')
     
     if difficulty_filter != 'all':
