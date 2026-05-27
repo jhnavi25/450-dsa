@@ -207,6 +207,67 @@ def compute_total_solved(progress, external_totals, all_questions=None):
     return max(dsa_done, external_total)
 
 
+def _get_field(user_doc, name, default=None):
+    """Get a field from a raw dict or a ``UserWrapper`` (Flask-Login) object."""
+    if user_doc is None:
+        return default
+    try:
+        return user_doc.get(name, default)
+    except (TypeError, AttributeError):
+        pass
+    try:
+        return getattr(user_doc, name)
+    except AttributeError:
+        return default
+
+
+def get_merged_daily_counts(user_doc):
+    """Return merged flat dict of daily counts, preferring per-platform data with legacy fallback.
+
+    Uses the new ``platform_calendars`` dict (``{platform: {date: count}}``) when available.
+    A special ``_legacy`` key stores the old combined totals during the migration period;
+    for dates that overlap with real per-platform data the higher of the two values is kept
+    (so non-migrated platform contributions are not lost).  Dates from the legacy
+    ``external_daily_counts`` field are used as a second fallback for dates not yet covered
+    by any per-platform data.
+
+    Falls back entirely to ``external_daily_counts`` when no per-platform data exists.
+    """
+    platform_calendars = _get_field(user_doc, "platform_calendars", {})
+    if isinstance(platform_calendars, dict) and platform_calendars:
+        legacy_fallback = {}
+        calendars = {}
+        for key, value in platform_calendars.items():
+            if key == "_legacy" and isinstance(value, dict):
+                legacy_fallback = value
+            else:
+                calendars[key] = value
+
+        merged = {}
+        for _platform, counts in calendars.items():
+            if isinstance(counts, dict):
+                for date, count in counts.items():
+                    if coerce_non_negative_number(count) > 0:
+                        merged[date] = merged.get(date, 0) + count
+
+        for date, count in legacy_fallback.items():
+            if coerce_non_negative_number(count) > 0:
+                merged[date] = max(merged.get(date, 0), count)
+
+        if merged:
+            has_legacy_fallback = bool(legacy_fallback)
+            legacy = _get_field(user_doc, "external_daily_counts", {})
+            if isinstance(legacy, dict):
+                for date, count in legacy.items():
+                    if coerce_non_negative_number(count) > 0:
+                        if has_legacy_fallback:
+                            merged[date] = max(merged.get(date, 0), count)
+                        elif date not in merged:
+                            merged[date] = count
+            return merged
+    return _get_field(user_doc, "external_daily_counts", {})
+
+
 def compute_c_score(user_doc, all_questions=None):
     """Compute composite C-Score (0-999) for a user document."""
     progress = user_doc.get("progress", {})
@@ -230,7 +291,7 @@ def compute_c_score(user_doc, all_questions=None):
         if key in EXTERNAL_SOLVED_TOTAL_KEYS
     )
 
-    ext_daily = user_doc.get("external_daily_counts", {})
+    ext_daily = get_merged_daily_counts(user_doc)
     valid_external_days = count_valid_external_daily_entries(ext_daily)
     ext_daily_keys = valid_external_daily_keys(ext_daily)
     extra_progress_days = set()
